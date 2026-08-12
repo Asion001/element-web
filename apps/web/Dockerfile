@@ -41,6 +41,10 @@ RUN apk add jq moreutils
 
 COPY --from=builder /src/apps/web/webapp /app
 
+# Build contexts can carry restrictive host modes; nginx must be able to read
+# all packaged assets and traverse their directories.
+RUN chmod -R a+rX /app
+
 # Override default nginx config. Templates in `/etc/nginx/templates` are passed
 # through `envsubst` by the nginx docker image entry point.
 COPY --chmod=644 /apps/web/docker/nginx-templates/* /etc/nginx/templates/
