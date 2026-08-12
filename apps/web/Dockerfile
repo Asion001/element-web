@@ -43,8 +43,8 @@ COPY --from=builder /src/apps/web/webapp /app
 
 # Override default nginx config. Templates in `/etc/nginx/templates` are passed
 # through `envsubst` by the nginx docker image entry point.
-COPY /apps/web/docker/nginx-templates/* /etc/nginx/templates/
-COPY /apps/web/docker/docker-entrypoint.d/* /docker-entrypoint.d/
+COPY --chmod=644 /apps/web/docker/nginx-templates/* /etc/nginx/templates/
+COPY --chmod=755 /apps/web/docker/docker-entrypoint.d/* /docker-entrypoint.d/
 
 RUN rm -rf /usr/share/nginx/html \
   && ln -s /app /usr/share/nginx/html
