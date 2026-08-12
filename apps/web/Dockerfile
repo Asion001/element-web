@@ -50,7 +50,8 @@ RUN chmod -R a+rX /app
 COPY --chmod=644 /apps/web/docker/nginx-templates/* /etc/nginx/templates/
 COPY --chmod=755 /apps/web/docker/docker-entrypoint.d/* /docker-entrypoint.d/
 
-RUN rm -rf /usr/share/nginx/html \
+RUN chmod 755 /etc/nginx/templates /docker-entrypoint.d \
+  && rm -rf /usr/share/nginx/html \
   && ln -s /app /usr/share/nginx/html
 
 # Run as nginx user by default
