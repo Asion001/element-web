@@ -11,6 +11,9 @@ import { type MatrixCall } from "matrix-js-sdk/src/webrtc/call";
 import { _t } from "../../../languageHandler";
 import ContextMenu, { type IProps as IContextMenuProps, MenuItem } from "../../structures/ContextMenu";
 import { SDKContext } from "../../../contexts/SDKContext.ts";
+import defaultDispatcher from "../../../dispatcher/dispatcher";
+import { Action } from "../../../dispatcher/actions";
+import { UserTab } from "../dialogs/UserTab";
 
 interface IProps extends IContextMenuProps {
     call: MatrixCall;
@@ -36,6 +39,11 @@ export default class LegacyCallContextMenu extends React.Component<IProps> {
         this.props.onFinished();
     };
 
+    public onSettingsClick = (): void => {
+        defaultDispatcher.dispatch({ action: Action.ViewUserSettings, initialTabId: UserTab.Voice });
+        this.props.onFinished();
+    };
+
     public render(): React.ReactNode {
         const holdUnholdCaption = this.props.call.isRemoteOnHold() ? _t("action|resume") : _t("action|hold");
         const handler = this.props.call.isRemoteOnHold() ? this.onUnholdClick : this.onHoldClick;
@@ -55,6 +63,9 @@ export default class LegacyCallContextMenu extends React.Component<IProps> {
                     {holdUnholdCaption}
                 </MenuItem>
                 {transferItem}
+                <MenuItem className="mx_LegacyCallContextMenu_item" onClick={this.onSettingsClick}>
+                    {_t("settings|voip|title")}
+                </MenuItem>
             </ContextMenu>
         );
     }

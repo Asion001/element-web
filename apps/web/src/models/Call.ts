@@ -46,6 +46,7 @@ import SdkConfig from "../SdkConfig.ts";
 import DMRoomMap from "../utils/DMRoomMap.ts";
 import { type WidgetMessaging, WidgetMessagingEvent } from "../stores/widgets/WidgetMessaging.ts";
 import { BugReportEndpointURLLocal } from "../IConfigOptions.ts";
+import { appendStreamingSettings } from "../utils/streaming/StreamingSettings.ts";
 
 const TIMEOUT_MS = 16000;
 const logger = rootLogger.getChild("models/Call");
@@ -793,6 +794,8 @@ export class ElementCall extends Call {
             // the default is true, so only set if false
             params.append("noiseSuppression", "false");
         }
+
+        appendStreamingSettings(params);
 
         // Set custom fonts
         if (SettingsStore.getValue("useSystemFont")) {

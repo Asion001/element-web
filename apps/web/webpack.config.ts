@@ -30,6 +30,7 @@ import pkgJson from "./package.json" with { type: "json" };
 import componentsJson from "./components.json" with { type: "json" };
 import { I18nWebpackPlugin } from "./I18nWebpackPlugin.ts";
 import type { sentryWebpackPlugin as sentryWebpackPluginType } from "@sentry/webpack-plugin/webpack5";
+import { patchElementCallStreamingSettings } from "./scripts/patch-element-call-streaming-settings.ts";
 
 // Environment variables
 // RIOT_OG_IMAGE_URL: specifies the URL to the image which should be used for the opengraph logo.
@@ -719,6 +720,13 @@ export default (env: string, argv: Record<string, any>): webpack.Configuration =
                         from: "**",
                         context: path.join(getPackageRoot("@element-hq/element-call-embedded"), "dist"),
                         to: path.join(__dirname, "webapp", "widgets", "element-call"),
+                        globOptions: { ignore: ["**/assets/index-*.js"] },
+                    },
+                    {
+                        from: "assets/index-*.js",
+                        context: path.join(getPackageRoot("@element-hq/element-call-embedded"), "dist"),
+                        to: path.join(__dirname, "webapp", "widgets", "element-call", "[path][name][ext]"),
+                        transform: { transformer: patchElementCallStreamingSettings },
                     },
                     // Mobile guide assets
                     {

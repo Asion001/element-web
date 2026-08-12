@@ -290,6 +290,9 @@ export interface Settings {
     "webrtc_audio_autoGainControl": IBaseSetting<boolean>;
     "webrtc_audio_echoCancellation": IBaseSetting<boolean>;
     "webrtc_audio_noiseSuppression": IBaseSetting<boolean>;
+    "webrtc_streaming_resolution": IBaseSetting<string>;
+    "webrtc_streaming_bitrate": IBaseSetting<string>;
+    "webrtc_streaming_codec": IBaseSetting<string>;
     "language": IBaseSetting<string>;
     "breadcrumb_rooms": IBaseSetting<string[]>;
     "recent_emoji": IBaseSetting<RecentEmojiData>;
@@ -1002,6 +1005,38 @@ export const SETTINGS: Settings = {
         supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS,
         displayName: _td("settings|voip|noise_suppression"),
         default: true,
+    },
+    "webrtc_streaming_resolution": {
+        supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS,
+        default: "auto",
+        displayName: _td("settings|voip|streaming_resolution"),
+        options: [
+            { value: "auto", label: _td("settings|voip|streaming_auto") },
+            { value: "480", label: _td("settings|voip|streaming_resolution_480p") },
+            { value: "720", label: _td("settings|voip|streaming_resolution_720p") },
+            { value: "1080", label: _td("settings|voip|streaming_resolution_1080p") },
+            { value: "1440", label: _td("settings|voip|streaming_resolution_1440p") },
+            { value: "2160", label: _td("settings|voip|streaming_resolution_2160p") },
+        ],
+    },
+    "webrtc_streaming_bitrate": {
+        supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS,
+        default: "auto",
+        displayName: _td("settings|voip|streaming_bitrate"),
+        options: [
+            { value: "auto", label: _td("settings|voip|streaming_auto") },
+            { value: "500000", label: _td("settings|voip|streaming_bitrate_500kbps") },
+            { value: "1000000", label: _td("settings|voip|streaming_bitrate_1mbps") },
+            { value: "2500000", label: _td("settings|voip|streaming_bitrate_2_5mbps") },
+            { value: "5000000", label: _td("settings|voip|streaming_bitrate_5mbps") },
+            { value: "8000000", label: _td("settings|voip|streaming_bitrate_8mbps") },
+            { value: "12000000", label: _td("settings|voip|streaming_bitrate_12mbps") },
+        ],
+    },
+    "webrtc_streaming_codec": {
+        supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS,
+        default: "auto",
+        displayName: _td("settings|voip|streaming_codec"),
     },
     "language": {
         supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS_WITH_CONFIG,

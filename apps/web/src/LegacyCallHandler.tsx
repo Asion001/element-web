@@ -53,6 +53,7 @@ import { isNotNull } from "./Typeguards";
 import { BackgroundAudio } from "./audio/BackgroundAudio";
 import { Jitsi } from "./widgets/Jitsi.ts";
 import { type SDKContextClass } from "./contexts/SDKContextClass.ts";
+import { configurePeerConnectionStreaming } from "./utils/streaming/StreamingSettings.ts";
 
 export const PROTOCOL_PSTN = "m.protocol.pstn";
 export const PROTOCOL_PSTN_PREFIXED = "im.vector.protocol.pstn";
@@ -381,6 +382,9 @@ export default class LegacyCallHandler extends TypedEventEmitter<LegacyCallHandl
 
     private setCallListeners(call: MatrixCall): void {
         let mappedRoomId = this.roomIdForCall(call);
+
+        if (call.peerConn) configurePeerConnectionStreaming(call.peerConn);
+        call.on(CallEvent.PeerConnectionCreated, (peerConnection) => configurePeerConnectionStreaming(peerConnection));
 
         call.on(CallEvent.Error, (err: CallError) => {
             if (!this.matchesCallForThisRoom(call)) return;

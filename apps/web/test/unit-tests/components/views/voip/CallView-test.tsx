@@ -7,7 +7,7 @@ Please see LICENSE files in the repository root for full details.
 */
 
 import React from "react";
-import { render, screen, act, cleanup } from "jest-matrix-react";
+import { render, screen, act, cleanup, fireEvent } from "jest-matrix-react";
 import { mocked, type Mocked } from "jest-mock";
 import {
     type MatrixClient,
@@ -29,12 +29,15 @@ import {
     clientAndSDKContextRenderOptions,
 } from "../../../../test-utils";
 import { MatrixClientPeg } from "../../../../../src/MatrixClientPeg";
-import { CallView as _CallView } from "../../../../../src/components/views/voip/CallView";
+import { CallView as _CallView, InCallSettingsMenu } from "../../../../../src/components/views/voip/CallView";
 import { WidgetMessagingStore } from "../../../../../src/stores/widgets/WidgetMessagingStore";
 import { CallStore } from "../../../../../src/stores/CallStore";
 import DMRoomMap from "../../../../../src/utils/DMRoomMap";
 import { type WidgetMessaging } from "../../../../../src/stores/widgets/WidgetMessaging";
 import { TestSDKContext } from "../../../TestSDKContext.ts";
+import defaultDispatcher from "../../../../../src/dispatcher/dispatcher";
+import { Action } from "../../../../../src/dispatcher/actions";
+import { UserTab } from "../../../../../src/components/views/dialogs/UserTab";
 
 const CallView = wrapInMatrixClientContext(_CallView);
 
@@ -109,5 +112,18 @@ describe("CallView", () => {
         const cleanSpy = jest.spyOn(call, "clean");
         await renderView();
         expect(cleanSpy).toHaveBeenCalled();
+    });
+
+    it("opens Voice & Video settings from the in-call menu", async () => {
+        const dispatchSpy = jest.spyOn(defaultDispatcher, "dispatch");
+        render(<InCallSettingsMenu />);
+
+        fireEvent.click(screen.getByRole("button", { name: "Voice & Video" }));
+        fireEvent.click(screen.getByRole("menuitem", { name: "Voice & Video" }));
+
+        expect(dispatchSpy).toHaveBeenCalledWith({
+            action: Action.ViewUserSettings,
+            initialTabId: UserTab.Voice,
+        });
     });
 });

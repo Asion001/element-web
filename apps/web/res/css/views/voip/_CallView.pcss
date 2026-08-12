@@ -23,3 +23,28 @@ Please see LICENSE files in the repository root for full details.
         background-color: $call-background;
     }
 }
+
+.mx_CallView_settingsMenu {
+    position: absolute;
+    z-index: 200;
+    top: 12px;
+    right: 12px;
+}
+
+.mx_CallView_settingsMenuButton {
+    display: flex;
+    width: 40px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 4px;
+    color: $call-view-button-on-foreground;
+    background-color: $call-view-button-on-background;
+    box-shadow: 0 4px 4px #00000026;
+
+    svg {
+        width: 24px;
+        height: 24px;
+    }
+}

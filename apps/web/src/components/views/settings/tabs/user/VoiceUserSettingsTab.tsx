@@ -26,6 +26,9 @@ import { SettingsSection } from "../../shared/SettingsSection";
 import { SettingsSubsection } from "../../shared/SettingsSubsection";
 import MatrixClientContext from "../../../../../contexts/MatrixClientContext";
 import SdkConfig from "../../../../../SdkConfig";
+import SettingsDropdown from "../../../elements/SettingsDropdown";
+import { getAvailableStreamingCodecs } from "../../../../../utils/streaming/StreamingSettings";
+import { STREAMING_AUTO, type StreamingCodec } from "../../../../../utils/streaming/constants";
 
 interface IState {
     mediaDevices: IMediaDevices | null;
@@ -36,6 +39,8 @@ interface IState {
     audioEchoCancellation: boolean;
     audioNoiseSuppression: boolean;
     enableLegacyCallsVoip: boolean;
+    streamingCodec: StreamingCodec;
+    availableStreamingCodecs: StreamingCodec[];
 }
 
 /**
@@ -69,6 +74,8 @@ export default class VoiceUserSettingsTab extends React.Component<EmptyObject, I
             audioEchoCancellation: MediaDeviceHandler.getAudioEchoCancellation(),
             audioNoiseSuppression: MediaDeviceHandler.getAudioNoiseSuppression(),
             enableLegacyCallsVoip: SettingsStore.getValue("enableLegacyCallsVoip"),
+            streamingCodec: SettingsStore.getValue("webrtc_streaming_codec") as StreamingCodec,
+            availableStreamingCodecs: [STREAMING_AUTO],
         };
     }
 
@@ -84,6 +91,14 @@ export default class VoiceUserSettingsTab extends React.Component<EmptyObject, I
         const canSeeDeviceLabels = await MediaDeviceHandler.hasAnyLabeledDevices();
         if (canSeeDeviceLabels) {
             await this.refreshMediaDevices();
+        }
+
+        const availableStreamingCodecs = await getAvailableStreamingCodecs();
+        if (!availableStreamingCodecs.includes(this.state.streamingCodec)) {
+            await SettingsStore.setValue("webrtc_streaming_codec", null, SettingLevel.DEVICE, STREAMING_AUTO);
+            this.setState({ streamingCodec: STREAMING_AUTO, availableStreamingCodecs });
+        } else {
+            this.setState({ availableStreamingCodecs });
         }
     }
 
@@ -180,6 +195,12 @@ export default class VoiceUserSettingsTab extends React.Component<EmptyObject, I
         });
     };
 
+    private onStreamingCodecChanged: ChangeEventHandler<HTMLSelectElement> = async (event) => {
+        const streamingCodec = event.target.value as StreamingCodec;
+        this.setState({ streamingCodec });
+        await SettingsStore.setValue("webrtc_streaming_codec", null, SettingLevel.DEVICE, streamingCodec);
+    };
+
     public render(): JSX.Element {
         let requestButton: ReactNode | undefined;
         let speakerDropdown: ReactNode | undefined;
@@ -263,6 +284,24 @@ export default class VoiceUserSettingsTab extends React.Component<EmptyObject, I
                         {_t("settings|voip|voice_input_description")}
                         {requestButton}
                         {microphoneDropdown}
+                    </SettingsSection>
+                    <SettingsSection heading={_t("settings|voip|streaming_section")}>
+                        <SettingsDropdown settingKey="webrtc_streaming_resolution" level={SettingLevel.DEVICE} />
+                        <SettingsDropdown settingKey="webrtc_streaming_bitrate" level={SettingLevel.DEVICE} />
+                        <Field
+                            element="select"
+                            label={_t("settings|voip|streaming_codec")}
+                            value={this.state.streamingCodec}
+                            onChange={this.onStreamingCodecChanged}
+                        >
+                            {this.state.availableStreamingCodecs.map((codec) => (
+                                <option key={codec} value={codec}>
+                                    {codec === STREAMING_AUTO
+                                        ? _t("settings|voip|streaming_auto")
+                                        : _t(`settings|voip|streaming_codec_${codec}`)}
+                                </option>
+                            ))}
+                        </Field>
                     </SettingsSection>
                     {allowLegacyCalls && (
                         <SettingsSection heading={_t("common|legacy_voice_and_video_settings")}>

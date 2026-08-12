@@ -17,6 +17,11 @@ import MediaDeviceHandler, {
     MediaDeviceKindEnum,
 } from "../../../../../../../src/MediaDeviceHandler";
 import { flushPromises } from "../../../../../../test-utils";
+import SettingsStore from "../../../../../../../src/settings/SettingsStore";
+
+jest.mock("../../../../../../../src/utils/streaming/StreamingSettings", () => ({
+    getAvailableStreamingCodecs: jest.fn().mockResolvedValue(["auto", "vp8", "h264", "vp9", "av1", "h265"]),
+}));
 
 jest.mock("../../../../../../../src/MediaDeviceHandler");
 const MediaDeviceHandlerMock = mocked(MediaDeviceHandler);
@@ -133,5 +138,17 @@ describe("<VoiceUserSettingsTab />", () => {
         expect(MediaDeviceHandler.setAudioAutoGainControl).toHaveBeenCalledWith(true);
         expect(MediaDeviceHandler.setAudioEchoCancellation).toHaveBeenCalledWith(false);
         expect(MediaDeviceHandler.setAudioNoiseSuppression).toHaveBeenCalledWith(true);
+    });
+
+    it("renders and stores streaming settings", async () => {
+        const setValue = jest.spyOn(SettingsStore, "setValue");
+        render(getComponent());
+
+        await expect(screen.findByLabelText("Codec")).resolves.toHaveDisplayValue("Auto");
+        expect(screen.getByLabelText("Resolution")).toBeInTheDocument();
+        expect(screen.getByLabelText("Maximum bitrate")).toBeInTheDocument();
+
+        fireEvent.change(screen.getByLabelText("Codec"), { target: { value: "av1" } });
+        expect(setValue).toHaveBeenCalledWith("webrtc_streaming_codec", null, "device", "av1");
     });
 });
