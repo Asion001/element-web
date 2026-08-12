@@ -24,7 +24,8 @@ RUN --mount=type=bind,source=.git,target=/src/.git /src/scripts/docker-link-repo
 
 # Build
 COPY --link --exclude=.git --exclude=apps/web/docker . /src
-RUN --mount=type=bind,source=.git,target=/src/.git /src/scripts/docker-package.sh
+ARG CI_PACKAGE
+RUN --mount=type=bind,source=.git,target=/src/.git CI_PACKAGE="${CI_PACKAGE}" /src/scripts/docker-package.sh
 
 # Copy the config now so that we don't create another layer in the app image
 RUN cp /src/apps/web/config.sample.json /src/apps/web/webapp/config.json
