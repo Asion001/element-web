@@ -37,12 +37,15 @@ const CODEC_MIME_TYPES: Record<Exclude<StreamingCodec, "auto">, readonly string[
     h265: ["video/h265", "video/hevc"],
 };
 
-const MEDIA_CAPABILITIES_CONTENT_TYPES: Record<Exclude<StreamingCodec, "auto">, string> = {
-    vp8: 'video/webm; codecs="vp8"',
-    h264: 'video/mp4; codecs="avc1.42E01E"',
-    vp9: 'video/webm; codecs="vp09.00.10.08"',
-    av1: 'video/webm; codecs="av01.0.04M.08"',
-    h265: 'video/mp4; codecs="hvc1.1.6.L93.B0"',
+const MEDIA_CAPABILITIES_CONTENT_TYPES: Record<Exclude<StreamingCodec, "auto">, { webrtc: string; record: string }> = {
+    vp8: { webrtc: "video/VP8", record: 'video/webm; codecs="vp8"' },
+    h264: {
+        webrtc: "video/H264;level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f",
+        record: 'video/mp4; codecs="avc1.42E01E"',
+    },
+    vp9: { webrtc: "video/VP9;profile-id=0", record: 'video/webm; codecs="vp09.00.10.08"' },
+    av1: { webrtc: "video/AV1", record: 'video/webm; codecs="av01.0.04M.08"' },
+    h265: { webrtc: "video/H265", record: 'video/mp4; codecs="hvc1.1.6.L93.B0"' },
 };
 
 let acceleratedCodecPromises = new Map<StreamingCodec, Promise<boolean>>();
@@ -71,21 +74,19 @@ export const isCodecAdvertised = (codec: Exclude<StreamingCodec, "auto">): boole
 const queryEncodingInfo = async (codec: Exclude<StreamingCodec, "auto">): Promise<boolean> => {
     if (!navigator.mediaCapabilities?.encodingInfo) return false;
 
-    const video = {
-        contentType: MEDIA_CAPABILITIES_CONTENT_TYPES[codec],
-        width: 1280,
-        height: 720,
-        bitrate: 2_500_000,
-        framerate: 30,
-    };
-
     for (const type of ["webrtc", "record"] as const) {
         try {
             const result = await navigator.mediaCapabilities.encodingInfo({
                 type,
-                video,
+                video: {
+                    contentType: MEDIA_CAPABILITIES_CONTENT_TYPES[codec][type],
+                    width: 1280,
+                    height: 720,
+                    bitrate: 2_500_000,
+                    framerate: 30,
+                },
             });
-            if (result.supported) return result.smooth && result.powerEfficient;
+            if (result.supported && result.smooth && result.powerEfficient) return true;
         } catch {
             // Browsers may reject a configuration type or codec string they do not understand.
         }
@@ -95,7 +96,6 @@ const queryEncodingInfo = async (codec: Exclude<StreamingCodec, "auto">): Promis
 
 export const isCodecHardwareAccelerated = async (codec: StreamingCodec): Promise<boolean> => {
     if (codec === STREAMING_AUTO || !ADVANCED_STREAMING_CODECS.has(codec)) return true;
-    if (!isCodecAdvertised(codec)) return false;
 
     let promise = acceleratedCodecPromises.get(codec);
     if (!promise) {
@@ -108,8 +108,9 @@ export const isCodecHardwareAccelerated = async (codec: StreamingCodec): Promise
 export const getAvailableStreamingCodecs = async (): Promise<StreamingCodec[]> => {
     const available: StreamingCodec[] = [STREAMING_AUTO];
     for (const codec of STREAMING_CODECS) {
-        if (!isCodecAdvertised(codec)) continue;
-        if (ADVANCED_STREAMING_CODECS.has(codec) && !(await isCodecHardwareAccelerated(codec))) continue;
+        const hardwareAccelerated = ADVANCED_STREAMING_CODECS.has(codec) && (await isCodecHardwareAccelerated(codec));
+        if (!isCodecAdvertised(codec) && !hardwareAccelerated) continue;
+        if (ADVANCED_STREAMING_CODECS.has(codec) && !hardwareAccelerated) continue;
         available.push(codec);
     }
     return available;
@@ -118,7 +119,7 @@ export const getAvailableStreamingCodecs = async (): Promise<StreamingCodec[]> =
 export const appendStreamingSettings = (params: URLSearchParams, settings = getStreamingSettings()): void => {
     if (settings.resolution !== STREAMING_AUTO) params.set(STREAMING_RESOLUTION_PARAM, settings.resolution);
     if (settings.bitrate !== STREAMING_AUTO) params.set(STREAMING_BITRATE_PARAM, settings.bitrate);
-    if (settings.codec !== STREAMING_AUTO && isCodecAdvertised(settings.codec)) {
+    if (settings.codec !== STREAMING_AUTO) {
         params.set(STREAMING_CODEC_PARAM, settings.codec);
     }
 };

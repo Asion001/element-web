@@ -49,7 +49,9 @@ export const InCallSettingsMenu: FC = () => {
             </ContextMenuTooltipButton>
             {menuDisplayed && buttonRef.current && (
                 <ContextMenu {...aboveLeftOf(buttonRef.current.getBoundingClientRect())} onFinished={closeMenu}>
-                    <MenuItem onClick={openVoiceSettings}>{_t("settings|voip|title")}</MenuItem>
+                    <MenuItem className="mx_CallView_settingsMenuItem" onClick={openVoiceSettings}>
+                        {_t("settings|voip|title")}
+                    </MenuItem>
                 </ContextMenu>
             )}
         </div>

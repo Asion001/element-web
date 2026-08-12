@@ -66,11 +66,46 @@ describe("StreamingSettings", () => {
         });
 
         await expect(getAvailableStreamingCodecs()).resolves.toEqual(["auto", "vp8", "h264", "vp9", "h265"]);
-        expect(encodingInfo).toHaveBeenCalled();
+        expect(encodingInfo).toHaveBeenCalledWith(
+            expect.objectContaining({
+                type: "webrtc",
+                video: expect.objectContaining({ contentType: "video/VP9;profile-id=0" }),
+            }),
+        );
+    });
+
+    it("exposes accelerated codecs when WebRTC capabilities omit them", async () => {
+        setCodecCapabilities(["video/VP8", "video/H264"]);
+        const encodingInfo = jest.fn().mockImplementation(async ({ type, video }) => ({
+            supported: type === "webrtc" && video.contentType === "video/H265",
+            smooth: true,
+            powerEfficient: true,
+        }));
+        Object.defineProperty(navigator, "mediaCapabilities", {
+            configurable: true,
+            value: { encodingInfo },
+        });
+
+        await expect(getAvailableStreamingCodecs()).resolves.toEqual(["auto", "vp8", "h264", "h265"]);
+    });
+
+    it("continues to the recording query after an inefficient WebRTC result", async () => {
+        setCodecCapabilities(["video/VP8", "video/H264", "video/VP9"]);
+        const encodingInfo = jest.fn().mockImplementation(async ({ type, video }) => ({
+            supported: true,
+            smooth: true,
+            powerEfficient: type === "record" && video.contentType.includes("vp09"),
+        }));
+        Object.defineProperty(navigator, "mediaCapabilities", {
+            configurable: true,
+            value: { encodingInfo },
+        });
+
+        await expect(getAvailableStreamingCodecs()).resolves.toContain("vp9");
     });
 
     it("omits Auto values and appends explicit values to Element Call URLs", () => {
-        setCodecCapabilities(["video/VP9"]);
+        setCodecCapabilities(["video/VP8"]);
         const automatic = new URLSearchParams();
         appendStreamingSettings(automatic, { resolution: "auto", bitrate: "auto", codec: "auto" });
         expect(automatic.toString()).toBe("");
